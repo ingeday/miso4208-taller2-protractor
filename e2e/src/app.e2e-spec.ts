@@ -1,6 +1,6 @@
 'use strict'; // necessary for es6 output in node
 
-import { browser, element, by, ElementFinder, ElementArrayFinder } from 'protractor';
+import { browser, element, by, ElementFinder, ElementArrayFinder, ExpectedConditions } from 'protractor';
 import { promise } from 'selenium-webdriver';
 
 const expectedH1 = 'Tour of Heroes';
@@ -91,9 +91,117 @@ describe('Proyecto base', () => {
       expect(page.appDashboard.isPresent()).toBeTruthy();
     });
 
+    //  Ejemplo: h3 Top Heroes
+    it(`has h3 'Top Heroes'`, ()=>{
+      expectHeading(3, 'Top Heroes')
+    })
+
+    // 1 Buscar un héroe
+    var hero_searched = 'Bombasto';
+    it(`Buscando a '${hero_searched}'`, ()=>{
+      let search_input = element(by.id('search-box'));
+      let results_box = element(by.css('.search-result'));
+      search_input.sendKeys(hero_searched);
+
+      element.all(by.css('.search-result li a')).then((option)=>{        
+        expect(option[0].getText()).toBe(hero_searched); // Resultado de la búsqueda
+      })
+    })
+
+    // 2. Eliminar un héroe
+    var hero_to_delete = 'Magneta';
+    it(`Héroe '${hero_to_delete}' eliminado.`, ()=>{
+      browser.get('./heroes'); // Navegar a lista de heroes
+      element.all(by.css('.heroes li a')).then((item)=>{
+        console.log(`Hay ${item.length} heroes`)
+        console.log(`Eliminado a ${hero_to_delete}`)
+      })
+      
+      element(by.xpath('/html/body/app-root/app-heroes/ul/li[5]/button')).click();
+      
+      element.all(by.css('.heroes li a')).then((item)=>{
+        console.log(`Hay ${item.length} heroes`)
+        expect(item.length).toBe(9);
+      })
+      
+    })
+
+    // 3. Editar un héroe
+    var hero_to_delete = 'Narco';
+    it(`Héroe '${hero_to_delete}' actualizado.`, async ()=>{
+      await browser.get('./heroes'); // Navegar a lista de heroes
+      
+      await element(by.xpath('/html/body/app-root/app-heroes/ul/li[2]/a')).click();
+
+      await element(by.xpath('/html/body/app-root/app-hero-detail/div/div[2]/label/input')).sendKeys(' II');
+
+      await element(by.xpath('/html/body/app-root/app-hero-detail/div/button[2]')).click();
+                        
+      
+      var until = ExpectedConditions;
+
+      await browser.wait(until.presenceOf(element(by.xpath('/html/body/app-root/app-heroes/ul/li[2]/a'))), 5000, 'Element taking too long to appear in the DOM');
+      
+      await element.all(by.css('.heroes li a')).then((item)=>{
+        expect(item[1].getText()).toBe('12 Narco II')
+      })
+  
+    })
+
+    // 4 Navegar a un héroe desde el dashboard
+    var hero_from_dashboard='Celeritas';
+    it(`Navegando a '${hero_from_dashboard}' desde el dashboard`, async ()=>{
+      await browser.get('./dashboard');
+      await element(by.xpath('/html/body/app-root/app-dashboard/div/a[3]')).click()
+
+      var until = ExpectedConditions;
+
+      await browser.wait(until.presenceOf(element(by.xpath('/html/body/app-root/app-hero-detail/div/h2'))), 5000, 'Element taking too long to appear in the DOM');
+      // CELERITAS Details
+      await expect(element(by.xpath('/html/body/app-root/app-hero-detail/div/h2')).getText()).toBe('CELERITAS Details')
+    });
+
+    // 5 
+    var hero_to_delete = 'Dynama';
+    it(`Navegar a '${hero_to_delete}' desde lista de heroes.`, async ()=>{
+      await browser.get('./heroes'); // Navegar a lista de heroes
+      
+      await element(by.xpath('/html/body/app-root/app-heroes/ul/li[7]/a')).click();
+
+      var until = ExpectedConditions;
+
+      await browser.wait(until.presenceOf(element(by.xpath('/html/body/app-root/app-hero-detail/div/h2'))), 5000, 'Element taking too long to appear in the DOM');
+      // Dyname Details
+      await expect(element(by.xpath('/html/body/app-root/app-hero-detail/div/h2')).getText()).toBe('DYNAMA Details')
+      
+    })
+
+
+    // 6. Navegar a un héroe desde la búsqueda
+    var hero_searched = 'Bombasto';
+    it(`Buscando y navegando a '${hero_searched}'`, ()=>{
+      browser.get('./dashboard');
+      let search_input = element(by.id('search-box'));
+      let results_box = element(by.css('.search-result'));
+      search_input.sendKeys(hero_searched);
+
+      element.all(by.css('.search-result li a')).then((option)=>{        
+        expect(option[0].getText()).toBe(hero_searched); // Resultado de la búsqueda
+        option[0].getAttribute('href').then((str)=>{
+          browser.get(`${str}`); // Navegando
+        });
+        
+      })
+    })
+
+    
+
+
   });
 
 });
+
+
 
 function addToHeroName(text: string): promise.Promise<void> {
   let input = element(by.css('input'));
